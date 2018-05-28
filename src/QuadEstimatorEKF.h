@@ -30,24 +30,24 @@ public:
   virtual void UpdateFromIMU(V3F accel, V3F gyro);
   virtual void UpdateFromGPS(V3F pos, V3F vel);
   virtual void UpdateFromBaro(float z) {};
-	virtual void UpdateFromMag(float magYaw);
+  virtual void UpdateFromMag(float magYaw);
 
   static const int QUAD_EKF_NUM_STATES = 7;
 
   // process covariance
-	MatrixXf Q;
+  MatrixXf Q;
 
-	// GPS measurement covariance
-	MatrixXf R_GPS;
+  // GPS measurement covariance
+  MatrixXf R_GPS;
 
-	// Magnetometer measurement covariance
-	MatrixXf R_Mag;
+  // Magnetometer measurement covariance
+  MatrixXf R_Mag;
 
   // attitude filter state
   float pitchEst, rollEst;
   float accelPitch, accelRoll; // raw pitch/roll angles as calculated from last accelerometer.. purely for graphing.
-	V3F accelG;
-	V3F lastGyro;
+  V3F accelG;
+  V3F lastGyro;
 
   // generic EKF update
   // z: measurement
@@ -57,8 +57,8 @@ public:
   void Update(VectorXf& z, MatrixXf& H, MatrixXf& R, VectorXf& zFromX);
 
   // EKF state and covariance
-	VectorXf ekfState;
-	MatrixXf ekfCov;
+  VectorXf ekfState;
+  MatrixXf ekfCov;
 
   // params
   float attitudeTau;
@@ -69,32 +69,32 @@ public:
   virtual vector<string> GetFields() const;
   string _name;
 
-	// error vs ground truth (trueError = estimated-actual)
-	virtual void UpdateTrueError(V3F truePos, V3F trueVel, SLR::Quaternion<float> trueAtt);
-	VectorXf trueError;
-	float pitchErr, rollErr, maxEuler;
+  // error vs ground truth (trueError = estimated-actual)
+  virtual void UpdateTrueError(V3F truePos, V3F trueVel, SLR::Quaternion<float> trueAtt);
+  VectorXf trueError;
+  float pitchErr, rollErr, maxEuler;
 
-	float posErrorMag, velErrorMag;
+  float posErrorMag, velErrorMag;
 
-	virtual V3F EstimatedPosition() 
-	{
-		return V3F(ekfState(0), ekfState(1), ekfState(2));
-	}
+  virtual V3F EstimatedPosition()
+  {
+    return V3F(ekfState(0), ekfState(1), ekfState(2));
+  }
 
-	virtual V3F EstimatedVelocity()
-	{
-		return V3F(ekfState(3), ekfState(4), ekfState(5));
-	}
+  virtual V3F EstimatedVelocity()
+  {
+    return V3F(ekfState(3), ekfState(4), ekfState(5));
+  }
 
-	virtual Quaternion<float> EstimatedAttitude()
-	{
-		return Quaternion<float>::FromEuler123_RPY(rollEst, pitchEst, ekfState(6));
-	}
+  virtual Quaternion<float> EstimatedAttitude()
+  {
+    return Quaternion<float>::FromEuler123_RPY(rollEst, pitchEst, ekfState(6));
+  }
 
-	virtual V3F EstimatedOmega()
-	{
-		return lastGyro;
-	}
+  virtual V3F EstimatedOmega()
+  {
+    return lastGyro;
+  }
 
-	float CovConditionNumber() const;
+  float CovConditionNumber() const;
 };

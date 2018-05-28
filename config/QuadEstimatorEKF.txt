@@ -22,4 +22,3 @@ MagYawStd = .1
 
 dtIMU = 0.002
 attitudeTau = 100
-

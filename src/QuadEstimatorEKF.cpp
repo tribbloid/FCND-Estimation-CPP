@@ -9,13 +9,13 @@ using namespace SLR;
 const int QuadEstimatorEKF::QUAD_EKF_NUM_STATES;
 
 QuadEstimatorEKF::QuadEstimatorEKF(string config, string name)
-  : BaseQuadEstimator(config),
-  Q(QUAD_EKF_NUM_STATES, QUAD_EKF_NUM_STATES),
-  R_GPS(6, 6),
-  R_Mag(1, 1),
-  ekfState(QUAD_EKF_NUM_STATES),
-  ekfCov(QUAD_EKF_NUM_STATES, QUAD_EKF_NUM_STATES),
-  trueError(QUAD_EKF_NUM_STATES)
+    : BaseQuadEstimator(config),
+      Q(QUAD_EKF_NUM_STATES, QUAD_EKF_NUM_STATES),
+      R_GPS(6, 6),
+      R_Mag(1, 1),
+      ekfState(QUAD_EKF_NUM_STATES),
+      ekfCov(QUAD_EKF_NUM_STATES, QUAD_EKF_NUM_STATES),
+      trueError(QUAD_EKF_NUM_STATES)
 {
   _name = name;
   Init();
@@ -46,7 +46,7 @@ void QuadEstimatorEKF::Init()
 
   pitchEst = 0;
   rollEst = 0;
-  
+
   // GPS measurement model covariance
   R_GPS.setZero();
   R_GPS(0, 0) = R_GPS(1, 1) = powf(paramSys->Get(_config + ".GPSPosXYStd", 0), 2);
@@ -328,7 +328,7 @@ float QuadEstimatorEKF::CovConditionNumber() const
 
   Eigen::JacobiSVD<MatrixXf> svd(m);
   float cond = svd.singularValues()(0)
-    / svd.singularValues()(svd.singularValues().size() - 1);
+               / svd.singularValues()(svd.singularValues().size() - 1);
   return cond;
 }
 

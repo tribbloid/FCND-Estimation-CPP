@@ -38,7 +38,7 @@ public:
   float kpBank, kpYaw;
   float KiPosZ;
   V3F kpPQR;
-  
+
   // limits & saturations
   float maxAscentRate, maxDescentRate;
   float maxSpeedXY;
