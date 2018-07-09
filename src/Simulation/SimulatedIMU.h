@@ -6,7 +6,7 @@
 #include "BaseQuadEstimator.h"
 
 class SimulatedIMU : public SimulatedQuadSensor
-{ 
+{
 public:
   SimulatedIMU(string config, string name) : SimulatedQuadSensor(config, name) { Init(); }
 
@@ -29,7 +29,7 @@ public:
     }
 
     _timeAccum = (_timeAccum - _gpsDT);
-    
+
     // accelerometer
     V3F accelError = V3F(gasdev_f(idum), gasdev_f(idum), gasdev_f(idum)) * _accelStd;
     _accelMeas = quad.Attitude().Rotate_ItoB(quad.Acceleration() + V3F(0,0,9.81f)) + accelError;
@@ -43,16 +43,16 @@ public:
 
     if (estimator)
     {
-			// TODO: update happens before prediction because predict uses the attitude and update
-			// updates the attitude...
-			estimator->UpdateFromIMU(_accelMeas, _gyroMeas);
+      // TODO: update happens before prediction because predict uses the attitude and update
+      // updates the attitude...
+      estimator->UpdateFromIMU(_accelMeas, _gyroMeas);
       estimator->Predict(dt, _accelMeas, _gyroMeas);
     }
   };
 
   // Access functions for graphing variables
   // note that GetData will only return true if a fresh measurement was generated last Update()
-  virtual bool GetData(const string& name, float& ret) const 
+  virtual bool GetData(const string& name, float& ret) const
   {
     if (!_freshMeas) return false;
 
@@ -71,11 +71,11 @@ public:
       GETTER_HELPER("IMU.GZ", _gyroMeas.z);
 #undef GETTER_HELPER
     }
-    return false; 
+    return false;
   };
 
-  virtual vector<string> GetFields() const 
-  { 
+  virtual vector<string> GetFields() const
+  {
     vector<string> ret = SimulatedQuadSensor::GetFields();
     ret.push_back(_name + ".IMU.ax");
     ret.push_back(_name + ".IMU.ay");

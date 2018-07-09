@@ -93,9 +93,19 @@ void QuadEstimatorEKF::UpdateFromIMU(V3F accel, V3F gyro)
   // (replace the code below)
   // make sure you comment it out when you add your own code -- otherwise e.g. you might integrate yaw twice
 
-  float predictedPitch = pitchEst + dtIMU * gyro.y;
-  float predictedRoll = rollEst + dtIMU * gyro.x;
-  ekfState(6) = ekfState(6) + dtIMU * gyro.z;	// yaw
+  // I'm using UKF regardless
+  // gyro => [body rate, previous pitch/roll] => prediction
+  // accel => current pitch/roll => observation
+  // at first P = I
+  // Q & R = eye(??) are tuned
+
+  auto oldAttitude = Quaternion<>::FromEuler123_RPY(rollEst, pitchEst, ekfState(6));
+  auto predictedAttitude = oldAttitude.IntegrateBodyRate(gyro, dtIMU);
+  auto predictedRPY = predictedAttitude.ToEulerRPY();
+
+  float predictedRoll = static_cast<float>(predictedRPY.x);
+  float predictedPitch = static_cast<float>(predictedRPY.y);
+  ekfState(6) = predictedRPY.z;
 
   // normalize yaw to -pi .. pi
   if (ekfState(6) > F_PI) ekfState(6) -= 2.f*F_PI;
@@ -104,8 +114,8 @@ void QuadEstimatorEKF::UpdateFromIMU(V3F accel, V3F gyro)
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
   // CALCULATE UPDATE
-  accelRoll = atan2f(accel.y, accel.z);
   accelPitch = atan2f(-accel.x, 9.81f);
+  accelRoll = atan2f(accel.y, accel.z);
 
   // FUSE INTEGRATION AND UPDATE
   rollEst = attitudeTau / (attitudeTau + dtIMU) * (predictedRoll)+dtIMU / (attitudeTau + dtIMU) * accelRoll;
@@ -162,6 +172,15 @@ VectorXf QuadEstimatorEKF::PredictState(VectorXf curState, float dt, V3F accel, 
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
 
+  auto accel_body = attitude.Rotate_BtoI(accel);
+
+  predictedState(0) += predictedState(3)*dt;
+  predictedState(1) += predictedState(4)*dt;
+  predictedState(2) += predictedState(5)*dt;
+
+  predictedState(3) += accel_body.x*dt;
+  predictedState(4) += accel_body.y*dt;
+  predictedState(5) += (accel_body.z - 9.81f)*dt;
 
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
