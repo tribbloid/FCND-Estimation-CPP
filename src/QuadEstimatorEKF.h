@@ -34,6 +34,9 @@ public:
 
   static const int QUAD_EKF_NUM_STATES = 7;
 
+  static constexpr float UKF_LAMBDA = 0.001f;
+  static constexpr float UKF_SIGMA_RADIUS = sqrt((float) QUAD_EKF_NUM_STATES + UKF_LAMBDA);
+
   // process covariance
   MatrixXf Q;
 

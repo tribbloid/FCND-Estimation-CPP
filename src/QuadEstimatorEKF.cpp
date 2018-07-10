@@ -93,12 +93,6 @@ void QuadEstimatorEKF::UpdateFromIMU(V3F accel, V3F gyro)
   // (replace the code below)
   // make sure you comment it out when you add your own code -- otherwise e.g. you might integrate yaw twice
 
-  // I'm using UKF regardless
-  // gyro => [body rate, previous pitch/roll] => prediction
-  // accel => current pitch/roll => observation
-  // at first P = I
-  // Q & R = eye(??) are tuned
-
   auto oldAttitude = Quaternion<>::FromEuler123_RPY(rollEst, pitchEst, ekfState(6));
   auto predictedAttitude = oldAttitude.IntegrateBodyRate(gyro, dtIMU);
   auto predictedRPY = predictedAttitude.ToEulerRPY();
@@ -208,7 +202,6 @@ MatrixXf QuadEstimatorEKF::GetRbgPrime(float roll, float pitch, float yaw)
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
 
-
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
   return RbgPrime;
@@ -245,8 +238,8 @@ void QuadEstimatorEKF::Predict(float dt, V3F accel, V3F gyro)
   // - if you want to transpose a matrix in-place, use A.transposeInPlace(), not A = A.transpose()
   // 
 
-  // we'll want the partial derivative of the Rbg matrix
-  MatrixXf RbgPrime = GetRbgPrime(rollEst, pitchEst, ekfState(6));
+  // we'll want the partial derivative of the Rbg matrix (not any more! UKF doesn't use Jacobian)
+//  MatrixXf RbgPrime = GetRbgPrime(rollEst, pitchEst, ekfState(6));
 
   // we've created an empty Jacobian for you, currently simply set to identity
   MatrixXf gPrime(QUAD_EKF_NUM_STATES, QUAD_EKF_NUM_STATES);
@@ -254,8 +247,21 @@ void QuadEstimatorEKF::Predict(float dt, V3F accel, V3F gyro)
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
 
+  // using UKF as it is much easier
 
-  /////////////////////////////// END STUDENT CODE ////////////////////////////
+  // cov matrix ONLY, mean vector has already been done in PredictState
+
+  auto P_old = ekfCov;
+  auto sqrtP_old = gPrime.sqrt();
+  auto sigmaMatrix = sqrtP_old * UKF_SIGMA_RADIUS;
+
+//  auto sigmaStates_plus = std:vector({
+//
+//                                });
+
+
+
+/////////////////////////////// END STUDENT CODE ////////////////////////////
 
   ekfState = newState;
 }
