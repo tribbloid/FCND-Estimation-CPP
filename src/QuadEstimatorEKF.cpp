@@ -3,6 +3,7 @@
 #include "Utility/SimpleConfig.h"
 #include "Utility/StringUtils.h"
 #include "Math/Quaternion.h"
+#include <iostream>
 
 using namespace SLR;
 
@@ -202,6 +203,8 @@ MatrixXf QuadEstimatorEKF::GetRbgPrime(float roll, float pitch, float yaw)
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
 
+  //not required by numerical diff for yaw. TODO: switch to symbolic/auto diff?
+
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
   return RbgPrime;
@@ -238,8 +241,8 @@ void QuadEstimatorEKF::Predict(float dt, V3F accel, V3F gyro)
   // - if you want to transpose a matrix in-place, use A.transposeInPlace(), not A = A.transpose()
   // 
 
-  // we'll want the partial derivative of the Rbg matrix (not any more! UKF doesn't use Jacobian)
-//  MatrixXf RbgPrime = GetRbgPrime(rollEst, pitchEst, ekfState(6));
+  // we'll want the partial derivative of the Rbg matrix
+  //  MatrixXf RbgPrime = GetRbgPrime(rollEst, pitchEst, ekfState(6));
 
   // we've created an empty Jacobian for you, currently simply set to identity
   MatrixXf gPrime(QUAD_EKF_NUM_STATES, QUAD_EKF_NUM_STATES);
@@ -247,23 +250,34 @@ void QuadEstimatorEKF::Predict(float dt, V3F accel, V3F gyro)
 
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
 
-  // using UKF as it is much easier
-
   // cov matrix ONLY, mean vector has already been done in PredictState
+  //numerical diff for yaw should be good enough
+  auto delta = dt;
+  auto yaw_plus = ekfState(6) + delta/2;
+  auto yaw_minus = ekfState(6) - delta/2;
+
+  auto accel_world_plus = Quaternion<float>::FromEuler123_RPY(rollEst, pitchEst, yaw_plus).Rotate_BtoI(accel);
+  auto accel_world_minus = Quaternion<float>::FromEuler123_RPY(rollEst, pitchEst, yaw_minus).Rotate_BtoI(accel);
+
+  auto accel2YawDiff = (accel_world_plus - accel_world_minus);
+
+  gPrime(0,3) = dt;
+  gPrime(1,4) = dt;
+  gPrime(2,5) = dt;
+
+  gPrime(3,6) = accel2YawDiff.x;
+  gPrime(4,6) = accel2YawDiff.y;
+  gPrime(5,6) = accel2YawDiff.z;
+
+  //predicting cov
 
   auto P_old = ekfCov;
-  auto sqrtP_old = gPrime.sqrt();
-  auto sigmaMatrix = sqrtP_old * UKF_SIGMA_RADIUS;
+  MatrixXf P_new = gPrime.transpose() * P_old * gPrime + Q;
 
-//  auto sigmaStates_plus = std:vector({
-//
-//                                });
-
-
-
-/////////////////////////////// END STUDENT CODE ////////////////////////////
+  /////////////////////////////// END STUDENT CODE ////////////////////////////
 
   ekfState = newState;
+  ekfCov = P_new;
 }
 
 void QuadEstimatorEKF::UpdateFromGPS(V3F pos, V3F vel)
@@ -285,6 +299,13 @@ void QuadEstimatorEKF::UpdateFromGPS(V3F pos, V3F vel)
   //  - this is a very simple update
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
 
+  MatrixXf eye(6, 6);
+  eye.setIdentity();
+
+  hPrime.block<6,6>(0,0) = eye;
+
+  zFromX = hPrime * ekfState;
+
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
   Update(z, hPrime, R_GPS, zFromX);
@@ -299,13 +320,26 @@ void QuadEstimatorEKF::UpdateFromMag(float magYaw)
   hPrime.setZero();
 
   // MAGNETOMETER UPDATE
-  // Hints: 
+  // Hints:
   //  - Your current estimated yaw can be found in the state vector: ekfState(6)
   //  - Make sure to normalize the difference between your measured and estimated yaw
   //    (you don't want to update your yaw the long way around the circle)
   //  - The magnetomer measurement covariance is available in member variable R_Mag
   ////////////////////////////// BEGIN STUDENT CODE ///////////////////////////
 
+  hPrime(0,6) = 1.f;
+
+  zFromX = hPrime * ekfState;
+  auto zFromX_diff = zFromX(0) - z(0);
+
+  if (zFromX_diff > F_PI) zFromX(0) -= 2.f*F_PI;
+  if (zFromX_diff < -F_PI) zFromX(0) += 2.f*F_PI;
+
+  auto actualDiff = zFromX(0) - z(0);
+  if (actualDiff > 1) {
+    //not very likely
+    std::cout << "observed: " + std::to_string(z(0)) + ", predicted: " + std::to_string(zFromX(0)) + ", diff: " + std::to_string(actualDiff) + "\n";
+  }
 
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
