@@ -335,11 +335,11 @@ void QuadEstimatorEKF::UpdateFromMag(float magYaw)
   if (zFromX_diff > F_PI) zFromX(0) -= 2.f*F_PI;
   if (zFromX_diff < -F_PI) zFromX(0) += 2.f*F_PI;
 
-  auto actualDiff = zFromX(0) - z(0);
-  if (actualDiff > 1) {
-    //not very likely
-    std::cout << "observed: " + std::to_string(z(0)) + ", predicted: " + std::to_string(zFromX(0)) + ", diff: " + std::to_string(actualDiff) + "\n";
-  }
+//  auto actualDiff = zFromX(0) - z(0);
+//  if (actualDiff > 1) {
+//    //not very likely
+//    std::cout << "observed: " + std::to_string(z(0)) + ", predicted: " + std::to_string(zFromX(0)) + ", diff: " + std::to_string(actualDiff) + "\n";
+//  }
 
   /////////////////////////////// END STUDENT CODE ////////////////////////////
 
